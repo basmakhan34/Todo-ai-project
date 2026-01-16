@@ -1,19 +1,13 @@
-import os
-from sqlmodel import create_engine, Session, SQLModel
+from sqlmodel import create_engine, SQLModel
 
-DATABASE_URL = os.getenv("DATABASE_URL")
+# Database file ka rasta
+DATABASE_URL = "sqlite:///./todos.db"
 
-if DATABASE_URL:
-    engine = create_engine(DATABASE_URL, echo=False)
-else:
-    # Use a local SQLite database as a fallback
-    DATABASE_URL = "sqlite:///database.db"
-    engine = create_engine(DATABASE_URL, echo=False, connect_args={"check_same_thread": False})
+# Engine setup
+engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 
-# Is function ka naam init_db kar diya hai
 def init_db():
+    # Circular Import fix: Models ko function ke andar import karein
+    import backend.models
+    # Ye line naye columns ke saath tables banayegi
     SQLModel.metadata.create_all(engine)
-
-def get_session():
-    with Session(engine) as session:
-        yield session
