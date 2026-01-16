@@ -1,15 +1,26 @@
-# AI-Native Todo App - Phase 1
+# 🤖 Agentic AI Todo Workspace - Phase 3
 
-This is a spec-driven, AI-generated Python Console Todo Application.
+A next-generation, AI-native task management system where you don't just write tasks—you chat with them. Powered by FastAPI, Next.js, and Llama 3.3.
 
-## Features
-- Add, View, Update, and Delete tasks.
-- Mark tasks as complete.
-- Search tasks by title.
-- Fully in-memory storage.
+## 🚀 Phase 3 Features
+- **AI Agentic Power**: Natural language task management using Groq & Llama 3.
+- **Modern Dashboard**: Professional dark-themed UI with a functional sidebar.
+- **Smart Filtering**: View All, Completed, or Deleted tasks via sidebar navigation.
+- **Real-time Sync**: Dashboard updates instantly when the AI agent adds a task.
+- **Secure Access**: Authentication guard to protect your workspace.
 
-## How to Run
-1. Ensure you have Python 3.13+ installed.
-2. Run the application using:
-   ```bash
-   python src/todo.py
+## 🛠️ Tech Stack
+- **Frontend**: Next.js 14, Tailwind CSS, Lucide Icons.
+- **Backend**: FastAPI (Python), SQLModel, SQLite.
+- **AI**: Groq API (Llama 3.3 Model).
+
+## 📦 Installation & Setup
+
+### 1. Backend Setup
+```bash
+cd backend
+python -m venv .venv
+source .venv/Scripts/activate  # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+# Create a .env file and add your GROQ_API_KEY
+uvicorn main:app --reload
