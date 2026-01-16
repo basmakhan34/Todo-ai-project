@@ -1,19 +1,14 @@
-const API_URL = "http://127.0.0.1:8000";
-
-export async function getTodos() {
-  const res = await fetch(`${API_URL}/todos`);
-  return res.json();
-}
-
-export async function deleteTodo(id: number) {
-  await fetch(`${API_URL}/todos/${id}`, { method: "DELETE" });
-}
-
-export async function postChatMessage(message: string) {
-  const res = await fetch(`${API_URL}/api/chat`, {
+export const postChatMessage = async (message: string) => {
+  const response = await fetch("http://127.0.0.1:8000/api/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ message }),
   });
-  return res.json();
-}
+  if (!response.ok) throw new Error("Network response was not ok");
+  return response.json(); // Isme 'response' aur 'task_created' hona chahiye
+};
+
+export const getTodos = async () => {
+  const response = await fetch("http://127.0.0.1:8000/todos");
+  return response.json();
+};

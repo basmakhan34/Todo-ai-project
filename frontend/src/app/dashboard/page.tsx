@@ -1,93 +1,57 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getTodos, deleteTodo } from "../../lib/api";
+import Sidebar from "../../components/Sidebar";
 import AiAssistant from "../../components/AiAssistant";
+import TodoList from "../../components/TodoList";
 
-export default function Dashboard() {
-  const [todos, setTodos] = useState([]);
-  const [loading, setLoading] = useState(true);
+export default function DashboardPage() {
   const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0); // List ko refresh karne ke liye
 
-  // 1. Database se tasks lane wala function
-  const refreshTasks = async () => {
-    try {
-      const data = await getTodos();
-      setTodos(data);
-    } catch (error) {
-      console.error("Backend server is likely down:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // 2. Auth Check aur initial data load
   useEffect(() => {
     const isLoggedIn = localStorage.getItem("isLoggedIn");
-    if (!isLoggedIn) {
-      router.push("/login"); // Redirect agar login nahi hai
+    if (isLoggedIn !== "true") {
+      router.push("/login"); // Auth Guard
     } else {
-      refreshTasks();
+      setLoading(false);
     }
-  }, []);
+  }, [router]);
 
-  // 3. Logout function
-  const handleLogout = () => {
-    localStorage.removeItem("isLoggedIn");
-    router.push("/");
+  // Ye function AI Assistant call karega
+  const handleTaskCreated = () => {
+    setRefreshKey(prev => prev + 1); // Key badalne se list refresh ho jayegi
   };
 
+  if (loading) return <div className="h-screen bg-black text-white flex items-center justify-center">Loading Workspace...</div>;
+
   return (
-    <div className="flex h-[calc(100vh-73px)] bg-[#050505] text-white">
-      {/* Todo List Area */}
-      <div className="flex-1 p-10 overflow-y-auto">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex justify-between items-center mb-10">
-            <div>
-              <h2 className="text-4xl font-extrabold tracking-tight">Agentic Workspace</h2>
-              <p className="text-gray-500 mt-1">Manage your thoughts with AI precision.</p>
-            </div>
-            <button 
-              onClick={handleLogout}
-              className="text-gray-400 hover:text-red-500 border border-gray-800 px-4 py-2 rounded-lg hover:border-red-900 transition"
-            >
-              Logout
-            </button>
+    <div className="flex h-screen bg-[#050505] text-white overflow-hidden font-sans">
+      {/* Sidebar - Navigation side */}
+      <Sidebar />
+
+      {/* Main Workspace */}
+      <main className="flex-1 flex flex-col p-6 gap-6 overflow-hidden">
+        <header className="flex justify-between items-center">
+          <h1 className="text-2xl font-black tracking-tight">WORKSPACE</h1>
+          <div className="text-xs text-gray-500 bg-white/5 px-3 py-1 rounded-full border border-white/10">
+            Status: <span className="text-green-500">Connected</span>
+          </div>
+        </header>
+
+        <div className="flex flex-1 gap-6 overflow-hidden">
+          {/* List Area - RefreshKey yahan kaam karega */}
+          <div className="flex-[2] bg-zinc-950 rounded-[2.5rem] border border-white/5 overflow-y-auto p-4 custom-scrollbar">
+            <TodoList key={refreshKey} />
           </div>
 
-          <div className="space-y-4">
-            {loading ? (
-              <div className="animate-pulse flex flex-col gap-4">
-                {[1, 2, 3].map((i) => <div key={i} className="h-20 bg-gray-900 rounded-2xl" />)}
-              </div>
-            ) : todos.length === 0 ? (
-              <div className="text-center py-24 border-2 border-dashed border-gray-900 rounded-3xl">
-                <p className="text-gray-600 text-lg italic">The stage is empty. Ask AI to start the performance.</p>
-              </div>
-            ) : (
-              todos.map((todo: any) => (
-                <div key={todo.id} className="bg-[#0f0f0f] border border-gray-800 p-6 rounded-2xl flex justify-between items-center group hover:border-blue-500/50 transition-all duration-300">
-                  <div className="flex items-center gap-4">
-                    <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
-                    <span className="text-xl font-medium">{todo.task}</span>
-                  </div>
-                  <button 
-                    onClick={async () => { await deleteTodo(todo.id); refreshTasks(); }}
-                    className="text-gray-500 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all duration-200 font-bold"
-                  >
-                    Delete
-                  </button>
-                </div>
-              ))
-            )}
+          {/* AI Chat Area */}
+          <div className="flex-[1.2] bg-zinc-950 rounded-[2.5rem] border border-white/5 relative flex flex-col shadow-2xl">
+            <AiAssistant onTaskCreated={handleTaskCreated} />
           </div>
         </div>
-      </div>
-
-      {/* AI Assistant Sidebar */}
-      <div className="w-[450px] bg-[#0a0a0a] border-l border-gray-800 shadow-2xl">
-        <AiAssistant onTaskCreated={refreshTasks} />
-      </div>
+      </main>
     </div>
   );
 }

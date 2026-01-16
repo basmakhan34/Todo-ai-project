@@ -1,46 +1,81 @@
 "use client";
 import { useState } from "react";
 import { postChatMessage } from "../lib/api";
+import { Send, Sparkles } from "lucide-react";
 
-export default function AiAssistant({ onTaskCreated }: { onTaskCreated: () => void }) {
+// Props interface define karein
+interface AiAssistantProps {
+  onTaskCreated?: () => void;
+}
+
+export default function AiAssistant({ onTaskCreated }: AiAssistantProps) {
   const [input, setInput] = useState("");
-  const [messages, setMessages] = useState<{ role: string; content: string }[]>([]);
+  const [messages, setMessages] = useState<{role: string, content: string}[]>([]);
+  const [isTyping, setIsTyping] = useState(false);
 
   const handleSend = async () => {
-    if (!input) return;
-    setMessages(prev => [...prev, { role: "user", content: input }]);
-    const currentInput = input;
-    setInput("");
-
-    const data = await postChatMessage(currentInput);
-    setMessages(prev => [...prev, { role: "ai", content: data.response }]);
+    if (!input.trim()) return;
     
-    // Task created confirmation detect karke list refresh karna
-    if (data.task_created) {
-      onTaskCreated();
+    const userMsg = input;
+    setMessages(prev => [...prev, { role: "user", content: userMsg }]);
+    setInput("");
+    setIsTyping(true);
+
+    try {
+      const data = await postChatMessage(userMsg);
+      setMessages(prev => [...prev, { role: "assistant", content: data.response }]);
+      
+      // Agar backend se task_created True aaya toh list refresh karo
+      if (data.task_created && onTaskCreated) {
+        onTaskCreated();
+      }
+    } catch (err) {
+      console.error("AI Error:", err);
+      setMessages(prev => [...prev, { role: "assistant", content: "Sorry, I encountered an error." }]);
+    } finally {
+      setIsTyping(false);
     }
   };
 
   return (
     <div className="flex flex-col h-full p-6">
-      <h2 className="text-2xl font-bold mb-6 text-blue-400">AI Assistant</h2>
-      <div className="flex-1 overflow-y-auto space-y-4 mb-4 custom-scrollbar">
+      {/* Messages Window */}
+      <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2 custom-scrollbar">
+        {messages.length === 0 && (
+          <div className="h-full flex flex-col items-center justify-center text-gray-600 italic text-sm">
+            <Sparkles size={24} className="mb-2 opacity-20" />
+            Ask me to add a task...
+          </div>
+        )}
         {messages.map((m, i) => (
-          <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-            <div className={`p-4 rounded-2xl max-w-[85%] ${m.role === "user" ? "bg-blue-600" : "bg-gray-800 border border-gray-700 text-green-300 shadow-lg"}`}>
+          <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+            <div className={`max-w-[85%] p-4 rounded-2xl text-sm leading-relaxed ${
+              m.role === 'user' 
+                ? 'bg-blue-600 text-white rounded-tr-none' 
+                : 'bg-white/5 text-gray-200 border border-white/10 rounded-tl-none'
+            }`}>
               {m.content}
             </div>
           </div>
         ))}
+        {isTyping && <div className="text-xs text-gray-500 animate-pulse ml-2">Agent is thinking...</div>}
       </div>
-      <div className="flex gap-2 bg-[#161616] p-2 rounded-xl border border-gray-800 focus-within:border-blue-500 transition">
+      
+      {/* Input Area */}
+      <div className="relative group">
         <input 
-          value={input} onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSend()}
-          className="bg-transparent p-2 flex-1 outline-none text-white"
-          placeholder="Ask AI to add a task..."
+          value={input} 
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+          placeholder="Message AI Agent..."
+          className="w-full bg-white/5 border border-white/10 p-4 pr-14 rounded-2xl outline-none focus:border-blue-500/50 transition-all text-sm placeholder:text-gray-600"
         />
-        <button onClick={handleSend} className="bg-blue-600 px-6 py-2 rounded-lg font-bold hover:bg-blue-500 active:scale-95 transition">Send</button>
+        <button 
+          onClick={handleSend}
+          className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-blue-600 rounded-xl hover:bg-blue-500 transition-colors"
+        >
+          <Send size={18} />
+        </button>
       </div>
     </div>
   );

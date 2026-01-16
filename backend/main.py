@@ -26,6 +26,22 @@ async def get_todos():
     with Session(engine) as session:
         return session.exec(select(Task)).all()
 
+# --- Naya Route: Task Status Update karne ke liye ---
+@app.put("/todos/{todo_id}")
+async def update_todo(todo_id: int, request: dict):
+    with Session(engine) as session:
+        todo = session.get(Task, todo_id)
+        if not todo:
+            raise HTTPException(status_code=404, detail="Not found")
+        
+        # Status update karein (True/False)
+        todo.completed = request.get("completed", todo.completed)
+        
+        session.add(todo)
+        session.commit()
+        session.refresh(todo)
+        return todo
+
 @app.delete("/todos/{todo_id}")
 async def delete_todo(todo_id: int):
     with Session(engine) as session:
@@ -39,10 +55,7 @@ async def delete_todo(todo_id: int):
 @app.post("/api/chat")
 async def chat_endpoint(request: dict):
     try:
-        # AI Agent se response aur status dono lein
         response_text, task_created = ask_ai(request["message"])
-        
-        # Ab ye error nahi dega
         return {
             "response": response_text, 
             "task_created": task_created
